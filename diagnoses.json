@@ -1,0 +1,235 @@
+{
+  "New Onset Seizure": {
+    "version": "1.1",
+    "icd10": "R56.9, G40.909",
+    "scope": "First unprovoked seizure workup and management",
+    "sections": {
+      "Laboratory Workup": {
+        "Core Labs": [
+          { "item": "Point-of-care glucose", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Hypoglycemia is immediately reversible cause" },
+          { "item": "CBC with differential", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Infection screen, baseline before ASMs" },
+          { "item": "CMP (BMP + LFTs)", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Electrolytes, renal/hepatic function for ASM dosing" },
+          { "item": "Magnesium", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Hypomagnesemia lowers seizure threshold" },
+          { "item": "Calcium (ionized if available)", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Hypocalcemia can cause seizures" },
+          { "item": "Phosphorus", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Hypophosphatemia (especially alcohol withdrawal)" },
+          { "item": "Urine drug screen", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Illicit drugs and withdrawal states" },
+          { "item": "Blood alcohol level", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Alcohol intoxication or withdrawal" },
+          { "item": "Urinalysis", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "UTI can provoke seizures" },
+          { "item": "Prolactin level (draw within 20 min)", "ED": "STAT", "HOSP": "-", "OPD": "-", "ICU": "STAT", "rationale": "Helps distinguish seizure from non-epileptic event" }
+        ],
+        "Extended Labs": [
+          { "item": "TSH", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Thyroid dysfunction affects seizure threshold" },
+          { "item": "Ammonia", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "-", "ICU": "URGENT", "rationale": "Hepatic encephalopathy, urea cycle disorders" },
+          { "item": "Troponin", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "-", "ICU": "URGENT", "rationale": "Cardiac ischemia as cause or consequence" },
+          { "item": "ECG", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Arrhythmia, prolonged QTc, Brugada" },
+          { "item": "Pregnancy test (Î²-hCG)", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Eclampsia; affects imaging and ASM choice" },
+          { "item": "B12 level", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Deficiency associated with seizures" },
+          { "item": "Folate level", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Deficiency can lower threshold" }
+        ]
+      },
+      "Imaging & Studies": {
+        "Essential Imaging": [
+          { "item": "CT head without contrast", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Acute exclusion of hemorrhage, mass, hydrocephalus" },
+          { "item": "MRI brain with/without contrast (epilepsy protocol)", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Gold standard for seizure etiology" },
+          { "item": "EEG (routine)", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Within 24-48h of seizure for best yield" }
+        ],
+        "Extended Studies": [
+          { "item": "Continuous EEG (cEEG) monitoring", "ED": "-", "HOSP": "URGENT", "OPD": "-", "ICU": "URGENT", "rationale": "If altered mental status persists" },
+          { "item": "Prolonged ambulatory EEG (24-72h)", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "If routine EEG non-diagnostic" },
+          { "item": "Video-EEG monitoring", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "If diagnosis uncertain (vs PNES)" },
+          { "item": "MRA/MRV brain", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "If vascular etiology suspected" }
+        ]
+      },
+      "Acute Treatment": {
+        "If Actively Seizing": [
+          { "item": "Lorazepam 0.1 mg/kg IV (max 4 mg); may repeat once in 5 min", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "First-line benzodiazepine" },
+          { "item": "Midazolam 10 mg IM if no IV access", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Alternative if no IV" },
+          { "item": "Dextrose 50% 25-50 mL IV if hypoglycemia", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Reversible cause" },
+          { "item": "Thiamine 100-500 mg IV BEFORE glucose if alcohol suspected", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Prevent Wernicke" },
+          { "item": "Flumazenil - CAUTION: lowers seizure threshold; use only if benzodiazepine overdose confirmed", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Benzodiazepine reversal (use with caution)" }
+        ],
+        "ASM Loading": [
+          { "item": "Levetiracetam 40-60 mg/kg IV (max 4500 mg) over 15 min", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "First-line acute loading" },
+          { "item": "Levetiracetam 1500-3000 mg PO if stable", "ED": "URGENT", "HOSP": "URGENT", "OPD": "URGENT", "ICU": "-", "rationale": "Oral loading option" },
+          { "item": "Fosphenytoin 20 mg PE/kg IV at 150 mg PE/min", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Alternative first-line" },
+          { "item": "Valproate 40 mg/kg IV over 10 min (max 3000 mg)", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Broad-spectrum alternative" },
+          { "item": "Lacosamide 200-400 mg IV over 15-30 min", "ED": "URGENT", "HOSP": "URGENT", "OPD": "-", "ICU": "URGENT", "rationale": "Alternative, check ECG" }
+        ]
+      },
+      "Maintenance ASMs": {
+        "First-Line Options": [
+          { "item": "Levetiracetam 500 mg BID, titrate to 1500 mg BID (max 3000 mg/day)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Monitor for behavioral changes" },
+          { "item": "Lamotrigine 25 mg daily Ã— 2 wks â†’ titrate slowly to 200-400 mg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Preferred in women; slow titration for SJS risk" },
+          { "item": "Lacosamide 100 mg BID, titrate to 200-400 mg BID", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Check ECG for PR prolongation" }
+        ],
+        "Alternative Options": [
+          { "item": "Oxcarbazepine 300 mg BID, titrate to 1200-2400 mg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Focal seizures; monitor sodium" },
+          { "item": "Carbamazepine 200 mg BID, titrate to 800-1200 mg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "HLA-B*1502 screen in at-risk populations" },
+          { "item": "Valproate 10-15 mg/kg/day, titrate to max 60 mg/kg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Generalized seizures; teratogenic" },
+          { "item": "Brivaracetam 50 mg BID, may increase to 100 mg BID", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Less behavioral effects than LEV" },
+          { "item": "Zonisamide 100 mg daily, titrate to 300-400 mg daily", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "Kidney stone risk; cognitive effects" },
+          { "item": "Topiramate 25 mg BID, titrate to 200-400 mg/day", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "Cognitive effects; weight loss" },
+          { "item": "Phenobarbital 1-3 mg/kg/day (level 15-40 Î¼g/mL)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Refractory or resource-limited settings" }
+        ]
+      },
+      "Referrals": {
+        "Consults": [
+          { "item": "Neurology consult", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "All new onset seizures" },
+          { "item": "Epilepsy specialist referral", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Diagnostic uncertainty, refractory, surgical candidacy" },
+          { "item": "EEG/Neurodiagnostics", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "EEG scheduling" },
+          { "item": "Neurosurgery consult", "ED": "-", "HOSP": "URGENT", "OPD": "EXT", "ICU": "URGENT", "rationale": "Structural lesion (tumor, AVM, SDH)" },
+          { "item": "Psychiatry consult", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Depression, anxiety, PNES evaluation" },
+          { "item": "Social work consult", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Driving restrictions, employment, insurance" },
+          { "item": "Women's health/OB-GYN referral", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "Contraception counseling, pregnancy planning" }
+        ]
+      },
+      "Patient Instructions": {
+        "Safety & Precautions": [
+          { "item": "Return to ED if: recurrent seizure, seizure >5 min, head injury, persistent confusion", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Return precautions" },
+          { "item": "Do NOT drive until cleared by neurology (per state guidelines)", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Legal requirement" },
+          { "item": "Avoid heavy machinery, heights, swimming alone", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Safety" },
+          { "item": "Showers preferred; keep bathroom door unlocked", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Drowning prevention" },
+          { "item": "Take ASM exactly as prescribed; do NOT stop abruptly", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Prevent breakthrough seizures" },
+          { "item": "Avoid triggers: sleep deprivation, alcohol, drugs, missed meds", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Seizure prevention" },
+          { "item": "Keep seizure diary", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Track pattern" },
+          { "item": "Wear medical ID bracelet", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Emergency identification" },
+          { "item": "Educate family on seizure first aid", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Family education" }
+        ]
+      },
+      "Lifestyle": {
+        "Recommendations": [
+          { "item": "Sleep 7-9 hours nightly; regular schedule", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Sleep deprivation is trigger" },
+          { "item": "Avoid alcohol", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Lowers threshold; ASM interactions" },
+          { "item": "Avoid illicit drugs (cocaine, amphetamines)", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Seizure triggers" },
+          { "item": "Folic acid 1-4 mg daily (women of childbearing potential)", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Reduce teratogenicity" },
+          { "item": "Vitamin D 1000-2000 IU daily", "ED": "-", "HOSP": "-", "OPD": "âœ“", "ICU": "-", "rationale": "Bone health on ASMs" },
+          { "item": "Smoking cessation", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Increases ASM metabolism" }
+        ]
+      }
+    }
+  },
+  "MS - New Diagnosis": {
+    "version": "2.2",
+    "icd10": "G35",
+    "scope": "Initial diagnostic workup and management of suspected or newly confirmed MS",
+    "sections": {
+      "Laboratory Workup": {
+        "Core Labs": [
+          { "item": "CBC with differential", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Infection screen, baseline before steroids" },
+          { "item": "CMP", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Metabolic screen, renal function" },
+          { "item": "TSH", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Thyroid disease mimics MS" },
+          { "item": "Vitamin B12", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "B12 deficiency causes myelopathy" },
+          { "item": "Folate", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Deficiency causes myelopathy" },
+          { "item": "ESR", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Inflammatory/vasculitis screen" },
+          { "item": "CRP", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Inflammatory marker" },
+          { "item": "Urinalysis", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "UTI as symptom trigger" },
+          { "item": "Blood glucose", "ED": "STAT", "HOSP": "STAT", "OPD": "ROUTINE", "ICU": "STAT", "rationale": "Pre-steroid baseline" },
+          { "item": "HbA1c", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Glycemic status before steroids" }
+        ],
+        "Extended Labs": [
+          { "item": "Vitamin D (25-OH)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Low levels associated with MS activity" },
+          { "item": "ANA", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Lupus/CTD screen" },
+          { "item": "Mayo CDS1 Panel (AQP4-IgG + MOG-IgG by FACS)", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "NMO/MOGAD screen; cell-based assay gold standard" },
+          { "item": "HIV", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "HIV-associated myelopathy" },
+          { "item": "RPR/VDRL", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Neurosyphilis mimics MS" },
+          { "item": "Lyme serology", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Endemic areas; neuroborreliosis" },
+          { "item": "ACE level", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Neurosarcoidosis" }
+        ]
+      },
+      "Imaging & Studies": {
+        "Essential Imaging": [
+          { "item": "MRI brain with/without contrast (MS protocol)", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Periventricular, juxtacortical, infratentorial lesions" },
+          { "item": "MRI C-spine with/without contrast", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Cord lesions (short segment, peripheral, dorsal)" },
+          { "item": "MRI T-spine with/without contrast", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Cord lesions" }
+        ],
+        "Extended Studies": [
+          { "item": "Visual evoked potentials (VEP)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Subclinical optic nerve involvement" },
+          { "item": "OCT (Optical coherence tomography)", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "RNFL thinning from prior optic neuritis" },
+          { "item": "MRI orbits with contrast", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "If optic neuritis suspected" }
+        ],
+        "Lumbar Puncture": [
+          { "item": "Opening pressure", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Rule out elevated ICP" },
+          { "item": "Cell count (tubes 1 and 4)", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Inflammation, rule out infection" },
+          { "item": "Protein", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Elevated in inflammation" },
+          { "item": "Glucose with serum glucose", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Low in infection/carcinomatous" },
+          { "item": "Oligoclonal bands (CSF AND serum)", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Intrathecal IgG synthesis; â‰¥2 CSF-specific bands" },
+          { "item": "IgG index", "ED": "URGENT", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Intrathecal antibody synthesis" }
+        ]
+      },
+      "Acute Treatment": {
+        "Steroids": [
+          { "item": "Methylprednisolone 1000 mg IV daily Ã— 3-5 days", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Acute relapse treatment" },
+          { "item": "Omeprazole 20-40 mg daily during steroids", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "GI prophylaxis" },
+          { "item": "Insulin sliding scale if glucose >180 mg/dL", "ED": "STAT", "HOSP": "STAT", "OPD": "-", "ICU": "STAT", "rationale": "Steroid-induced hyperglycemia" },
+          { "item": "Prednisone oral taper 60 mg Ã— 7 days then taper (optional)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "If oral taper desired" }
+        ],
+        "Second-Line": [
+          { "item": "Plasmapheresis (PLEX) 5-7 exchanges over 10-14 days", "ED": "-", "HOSP": "URGENT", "OPD": "-", "ICU": "URGENT", "rationale": "Steroid-refractory attacks" },
+          { "item": "IVIG 0.4 g/kg/day Ã— 5 days", "ED": "-", "HOSP": "URGENT", "OPD": "-", "ICU": "URGENT", "rationale": "Alternative for steroid-refractory" }
+        ]
+      },
+      "Symptomatic Treatment": {
+        "Spasticity": [
+          { "item": "Baclofen 5 mg TID, titrate to max 80 mg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Do NOT stop abruptly (withdrawal risk)" },
+          { "item": "Tizanidine 2 mg qHS/TID, titrate to max 36 mg/day", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Monitor LFTs; sedation; hypotension" }
+        ],
+        "Pain": [
+          { "item": "Gabapentin 300 mg qHS, titrate to 900-1800 mg TID", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Neuropathic pain" },
+          { "item": "Pregabalin 75 mg BID, titrate to 150-300 mg BID", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Alternative for neuropathic pain" },
+          { "item": "Duloxetine 30 mg daily, increase to 60 mg", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Pain and depression" },
+          { "item": "Carbamazepine 100 mg BID, titrate for trigeminal neuralgia", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Trigeminal neuralgia treatment" }
+        ],
+        "Bladder": [
+          { "item": "Oxybutynin 5 mg BID-TID for urgency", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Anticholinergic; cognitive effects in elderly" },
+          { "item": "Tamsulosin 0.4 mg daily for retention", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Alpha blocker" }
+        ],
+        "Fatigue": [
+          { "item": "Amantadine 100 mg qAM, may add 100 mg afternoon (max 200 mg/day)", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "First-line for fatigue" },
+          { "item": "Modafinil 100-200 mg qAM", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "Schedule IV; OPD only" }
+        ],
+        "Walking": [
+          { "item": "Dalfampridine 10 mg q12h (exactly 12 hours apart)", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "CrCl >50 required; seizure risk" }
+        ],
+        "Depression": [
+          { "item": "Sertraline 50 mg daily, titrate to max 200 mg", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "First-line SSRI" },
+          { "item": "Bupropion 150 mg SR daily, increase to BID", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "No sexual side effects; seizure risk at high doses" }
+        ]
+      },
+      "Referrals": {
+        "Consults": [
+          { "item": "MS specialist/Neuroimmunology referral", "ED": "URGENT", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "All new MS diagnoses for DMT discussion" },
+          { "item": "Neuro-ophthalmology referral", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Optic neuritis, visual symptoms, OCT baseline" },
+          { "item": "Physical therapy for gait and balance", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "ROUTINE", "rationale": "Gait dysfunction, falls" },
+          { "item": "Occupational therapy for ADL assessment", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Upper extremity, energy conservation" },
+          { "item": "Speech therapy for swallow evaluation", "ED": "-", "HOSP": "URGENT", "OPD": "ROUTINE", "ICU": "URGENT", "rationale": "Brainstem involvement, dysphagia" },
+          { "item": "Urology referral", "ED": "-", "HOSP": "-", "OPD": "ROUTINE", "ICU": "-", "rationale": "Bladder dysfunction, recurrent UTI" },
+          { "item": "Psychiatry/Psychology referral", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Depression, anxiety, adjustment to diagnosis" },
+          { "item": "Social work consult", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "Insurance, disability, support resources" },
+          { "item": "Infusion center coordination", "ED": "-", "HOSP": "ROUTINE", "OPD": "ROUTINE", "ICU": "-", "rationale": "PLEX scheduling; future DMT infusions" }
+        ]
+      },
+      "Patient Instructions": {
+        "Safety & Precautions": [
+          { "item": "Return to ED if: rapid vision loss, sudden weakness, difficulty breathing, urinary retention", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Return precautions" },
+          { "item": "Avoid driving until cleared by neurology", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Safety" },
+          { "item": "Heat may temporarily worsen symptoms (Uhthoff phenomenon) - not a new attack", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Education" },
+          { "item": "Expect steroid side effects: insomnia, mood changes, appetite, metallic taste", "ED": "âœ“", "HOSP": "âœ“", "OPD": "-", "ICU": "-", "rationale": "Set expectations" },
+          { "item": "Do not stop steroids abruptly if on oral taper", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Adrenal suppression" },
+          { "item": "Do not stop baclofen/tizanidine abruptly", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Withdrawal/rebound spasticity" },
+          { "item": "Contact MS specialist before starting new medications", "ED": "-", "HOSP": "-", "OPD": "âœ“", "ICU": "-", "rationale": "Drug interactions with DMTs" },
+          { "item": "Complete vaccinations before DMT initiation", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Live vaccines contraindicated on many DMTs" }
+        ]
+      },
+      "Lifestyle": {
+        "Recommendations": [
+          { "item": "Smoking cessation (accelerates MS progression)", "ED": "âœ“", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Modifiable risk factor" },
+          { "item": "Vitamin D 2000-5000 IU daily (target >40 ng/mL)", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Low levels worsen disease activity" },
+          { "item": "Regular aerobic exercise 150 min/week", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Improves fatigue, mood, function" },
+          { "item": "Avoid excessive heat (hot tubs, saunas, prolonged sun)", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Uhthoff phenomenon" },
+          { "item": "Stress management and adequate sleep (7-8 hours)", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "General wellness" },
+          { "item": "Fall prevention: remove loose rugs, adequate lighting, assistive devices", "ED": "-", "HOSP": "âœ“", "OPD": "âœ“", "ICU": "-", "rationale": "Safety" }
+        ]
+      }
+    }
+  }
+}

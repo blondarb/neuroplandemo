@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuro Clinical Decision Support - Plan Builder</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; }
+        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; gap: 1rem; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .whitespace-pre-wrap { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p class="text-gray-500">Loading Plan Builder...</p>
+        </div>
+    </div>
+    
+    <script type="text/babel">
+const { useState, useMemo } = React;
+
+// Enhanced Diagnoses Data
+const diagnosesData = {
+  "Status Epilepticus": {
+    "version": "1.2",
+    "icd10": "G40.901, G41.0, G41.1, G41.2, G41.8, G41.9",
+    "scope": "Management of convulsive and non-convulsive status epilepticus in adults. Covers staged treatment from benzodiazepines through refractory/super-refractory phases. Includes NORSE/FIRES protocols.",
+    "definitions": {
+      "Status Epilepticus (SE)": "Seizure lasting >5 minutes OR \u22652 seizures without return to baseline between episodes",
+      "Refractory SE (RSE)": "SE continuing after adequate doses of initial benzodiazepine AND one second-line ASM",
+      "Super-Refractory SE (SRSE)": "SE continuing \u226524 hours after anesthetic initiation, including cases that recur during anesthetic weaning",
+      "NORSE": "New-Onset Refractory Status Epilepticus - RSE without clear acute/active structural, toxic, or metabolic cause in a patient without prior epilepsy",
+      "FIRES": "Febrile Infection-Related Epilepsy Syndrome - subset of NORSE with febrile illness \u226524 hours before SE onset"
+    },
+    "quickReference": {
+      "title": "3 AM Rapid Protocol",
+      "description": "Single default pathway with exact doses for non-specialists",
+      "steps": [
+        {
+          "name": "Step 1: Stabilization (Time 0)",
+          "items": [
+            "Call for help - Page Neurology STAT; alert ICU",
+            "Oxygen - Non-rebreather 15 L/min",
+            "IV access - Two large-bore IVs (18G or larger)",
+            "Fingerstick glucose - If <70 \u2192 D50 50mL + Thiamine 100mg IV"
+          ]
+        },
+        {
+          "name": "Step 2: First-Line Benzodiazepine (0-5 min)",
+          "items": [
+            "IV access: Lorazepam 4mg IV push over 2 min",
+            "No IV: Midazolam 10mg IM (deltoid or thigh)",
+            "Wait 5 min - still seizing? Repeat x1 (max 2 doses)",
+            "DO NOT give 3rd dose \u2192 Go to Step 3"
+          ]
+        },
+        {
+          "name": "Step 3: Second-Line ASM (5-20 min)",
+          "items": [
+            "DEFAULT: Levetiracetam 50mg/kg IV (max 4500mg) over 10 min",
+            "Already on LEV: Use Fosphenytoin 20 mg PE/kg",
+            "Cardiac disease: Use Levetiracetam (avoid fosphenytoin)",
+            "Pregnant: Use Levetiracetam (avoid valproate)"
+          ]
+        },
+        {
+          "name": "Step 4: Refractory SE (20+ min) - CALL ICU",
+          "items": [
+            "Requires ICU, intubation, continuous EEG",
+            "Midazolam: Load 0.2mg/kg \u2192 0.1mg/kg/hr infusion",
+            "\u00b1 Ketamine: Load 1-2mg/kg \u2192 1-5mg/kg/hr (consider EARLY)",
+            "Target burst suppression on cEEG"
+          ]
+        }
+      ]
+    },
+    "appendices": [
+      {
+        "title": "Appendix A: Time-Based Treatment Algorithm",
+        "content": "TIME 0-5 MIN: STABILIZATION\n\u2022 ABCs: Airway, Breathing, Circulation\n\u2022 Glucose check \u2192 Dextrose if low + Thiamine\n\u2022 IV access x 2\n\u2022 Lorazepam 0.1 mg/kg IV (max 4 mg) OR Midazolam 10 mg IM\n\u2022 May repeat BZD x1 in 5 min\n\nTIME 5-20 MIN: SECOND-LINE (if still seizing)\n\u2022 Levetiracetam 40-60 mg/kg IV (max 4500 mg)\n\u2022 OR Fosphenytoin 20 mg PE/kg IV\n\u2022 OR Valproate 40 mg/kg IV (avoid in pregnancy)\n\u2022 Start cEEG monitoring, CT head\n\nTIME 20-60 MIN: REFRACTORY SE (if still seizing)\n\u2022 Requires ICU and intubation\n\u2022 Midazolam: Load 0.2 mg/kg \u2192 0.1-2 mg/kg/hr\n\u2022 Propofol: Load 1-2 mg/kg \u2192 20-200 mcg/kg/min\n\u2022 Ketamine: Load 1-2 mg/kg \u2192 1-5 mg/kg/hr \u2190 EARLY\n\u2022 Target burst suppression on cEEG\n\nTIME >24 HOURS: SUPER-REFRACTORY SE\n\u2022 Add additional ASMs (topiramate, perampanel)\n\u2022 Combine anesthetics (midazolam + ketamine)\n\u2022 If NORSE/FIRES \u2192 Immunotherapy\n\u2022 Consider ketogenic diet by Day 7\n\u2022 Goals of care discussion"
+      },
+      {
+        "title": "Appendix B: NORSE/FIRES Immunotherapy Timeline",
+        "content": "DAY 0-3: FIRST-LINE IMMUNOTHERAPY\n\u2022 Methylprednisolone 1000 mg IV daily \u00d7 3-5 days\n\u2022 \u00b1 IVIG 0.4 g/kg/day \u00d7 5 days (can start simultaneously)\n\u2022 Continue ASMs and anesthetics as needed\n\nDAY 3-7: ESCALATE IF NO RESPONSE\n\u2022 Add IVIG if not started\n\u2022 Consider PLEX (5-7 exchanges)\n\u2022 Do not wait for autoimmune results\n\nDAY 7: KEY DECISION POINT\n\u2022 Initiate ketogenic diet\n\u2022 If first-line inadequate \u2192 Start second-line:\n  - Rituximab 375 mg/m\u00b2 weekly \u00d7 4\n  - OR Cyclophosphamide 750-1000 mg/m\u00b2 monthly\n\nDAY 7+: ONGOING MANAGEMENT\n\u2022 Continue second-line immunotherapy\n\u2022 Maintain ketogenic diet\n\u2022 Consider tocilizumab or anakinra if refractory\n\u2022 Goals of care discussion if no improvement"
+      }
+    ],
+    "clinicalNotes": [
+      "SE is a medical emergency with ~20% mortality; rapid treatment is critical",
+      "Every 5-minute delay in treatment associated with worse outcomes",
+      "cEEG monitoring essential - up to 48% of patients have non-convulsive seizures after convulsive SE controlled",
+      "Levetiracetam dosing: ESETT used 60 mg/kg; 40 mg/kg also acceptable. No head-to-head comparison.",
+      "Ketamine timing: Earlier administration (in RSE, not just SRSE) correlates with better outcomes. Consider using early.",
+      "NORSE/FIRES: ~50% remain cryptogenic; start immunotherapy within 72 hours even without confirmed etiology.",
+      "Propofol infusion syndrome: metabolic acidosis, rhabdomyolysis, cardiac failure - limit propofol to <48h at high doses"
+    ],
+    "sections": {
+      "Laboratory Workup": {
+        "Core Labs": [
+          {
+            "item": "Point-of-care glucose",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hypoglycemia is immediately reversible cause"
+          },
+          {
+            "item": "CBC with differential",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Infection screen, baseline before ASMs"
+          },
+          {
+            "item": "CMP (BMP + LFTs)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Electrolytes, renal/hepatic function for ASM dosing"
+          },
+          {
+            "item": "Magnesium",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hypomagnesemia lowers seizure threshold"
+          },
+          {
+            "item": "Calcium (ionized if available)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hypocalcemia can cause seizures"
+          },
+          {
+            "item": "Phosphorus",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hypophosphatemia lowers seizure threshold"
+          },
+          {
+            "item": "Blood gas (ABG or VBG)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Acidosis, oxygenation, ventilation status"
+          },
+          {
+            "item": "Lactate",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Elevated in prolonged seizure; severity marker"
+          },
+          {
+            "item": "Urine drug screen",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Illicit drugs and withdrawal states"
+          },
+          {
+            "item": "Blood alcohol level",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alcohol withdrawal common cause"
+          },
+          {
+            "item": "ASM levels (if on therapy)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Subtherapeutic levels as precipitant"
+          },
+          {
+            "item": "Pregnancy test (women of childbearing age)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Eclampsia; affects ASM choice"
+          }
+        ],
+        "Extended Labs": [
+          {
+            "item": "Ammonia",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hepatic encephalopathy, valproate toxicity"
+          },
+          {
+            "item": "TSH",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Thyroid storm/myxedema"
+          },
+          {
+            "item": "Troponin",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Cardiac stress from prolonged seizure"
+          },
+          {
+            "item": "CPK/CK",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Rhabdomyolysis from prolonged convulsions"
+          },
+          {
+            "item": "Cortisol (random)",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Adrenal insufficiency"
+          },
+          {
+            "item": "Coagulation panel (PT/INR, PTT)",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Pre-LP, hemorrhage risk"
+          },
+          {
+            "item": "Type and screen",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Anticipate possible surgical intervention"
+          },
+          {
+            "item": "Procalcitonin",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "CNS infection if suspected"
+          }
+        ],
+        "NORSE Workup": [
+          {
+            "item": "Autoimmune encephalitis panel (serum)",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Anti-NMDAR, LGI1, CASPR2 in NORSE"
+          },
+          {
+            "item": "Paraneoplastic panel (serum)",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Subacute onset, smoking history, weight loss"
+          },
+          {
+            "item": "HIV",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "HIV-associated CNS disease"
+          },
+          {
+            "item": "RPR/VDRL",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "Neurosyphilis"
+          }
+        ]
+      },
+      "Imaging & Studies": {
+        "Essential Imaging": [
+          {
+            "item": "CT head without contrast",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Mass, hemorrhage, stroke, herniation"
+          },
+          {
+            "item": "Continuous EEG (cEEG) monitoring",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Mandatory in RSE/SRSE; NCSE detection"
+          },
+          {
+            "item": "Chest X-ray",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Aspiration risk, ETT position"
+          }
+        ],
+        "Extended Imaging": [
+          {
+            "item": "MRI brain with/without contrast",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Encephalitis, stroke, tumor, cortical injury"
+          },
+          {
+            "item": "CT angiography head/neck",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Large vessel occlusion, dissection"
+          },
+          {
+            "item": "MRA/MRV brain",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "Venous thrombosis, vascular malformation"
+          },
+          {
+            "item": "CT chest/abdomen/pelvis",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "Occult malignancy if paraneoplastic"
+          }
+        ],
+        "Lumbar Puncture": [
+          {
+            "item": "Opening pressure",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Elevated ICP"
+          },
+          {
+            "item": "Cell count (tubes 1 and 4)",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Infection, inflammation"
+          },
+          {
+            "item": "Protein",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Elevated in infection, inflammation"
+          },
+          {
+            "item": "Glucose with serum glucose",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Low in bacterial/fungal meningitis"
+          },
+          {
+            "item": "Gram stain and culture",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Bacterial meningitis"
+          },
+          {
+            "item": "BioFire FilmArray ME Panel",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Rapid pathogen identification"
+          },
+          {
+            "item": "HSV-1/2 PCR",
+            "ED": "URGENT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "HSV encephalitis"
+          },
+          {
+            "item": "Autoimmune encephalitis panel (CSF)",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "NORSE, limbic encephalitis"
+          }
+        ]
+      },
+      "Stabilization (Time 0)": {
+        "Initial Management": [
+          {
+            "item": "Airway positioning/management",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Head-tilt chin-lift, prepare for intubation"
+          },
+          {
+            "item": "Supplemental oxygen (NRB 15 L/min)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Maintain O2 sat >94%"
+          },
+          {
+            "item": "IV access (two large-bore 18G)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Medication administration"
+          },
+          {
+            "item": "Cardiac monitoring (continuous)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Rhythm, HR, BP monitoring"
+          },
+          {
+            "item": "Dextrose 50% 50mL IV (if glucose <70)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Reversible cause"
+          },
+          {
+            "item": "Thiamine 100-500mg IV BEFORE/WITH glucose",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Prevent Wernicke"
+          },
+          {
+            "item": "Isotonic fluids (NS or LR)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Volume resuscitation"
+          }
+        ]
+      },
+      "First-Line: Benzodiazepines (0-5 min)": {
+        "IV Access Available": [
+          {
+            "item": "Lorazepam 4mg IV push over 2 min; repeat x1 in 5 min if still seizing (max 8mg)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "First-line; preferred IV benzodiazepine"
+          },
+          {
+            "item": "Midazolam 0.2mg/kg IV (max 10mg); may repeat x1",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative IV option"
+          },
+          {
+            "item": "Diazepam 0.15mg/kg IV (max 10mg); repeat x1 in 5 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Short duration - requires follow-up ASM"
+          }
+        ],
+        "No IV Access": [
+          {
+            "item": "Midazolam 10mg IM (single injection, deltoid/thigh)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "RAMPART trial: non-inferior to IV lorazepam"
+          },
+          {
+            "item": "Midazolam 5mg per nostril (10mg total) intranasal",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative if no IV/IM access"
+          },
+          {
+            "item": "Midazolam 10mg buccal",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative route"
+          },
+          {
+            "item": "Diazepam 0.2-0.5mg/kg PR (max 20mg)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Rectal gel formulation"
+          }
+        ]
+      },
+      "Second-Line ASMs (5-20 min)": {
+        "First Choice Options": [
+          {
+            "item": "Levetiracetam 60mg/kg IV (max 4500mg) over 10-15 min [ESETT dosing]",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "ESETT trial; safest profile; no cardiac monitoring"
+          },
+          {
+            "item": "Levetiracetam 40mg/kg IV (max 4500mg) over 10-15 min [conservative]",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative dosing; reduce if CrCl <50"
+          },
+          {
+            "item": "Fosphenytoin 20mg PE/kg IV at 150mg PE/min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Cardiac monitoring required; avoid if AV block"
+          },
+          {
+            "item": "Valproate 40mg/kg IV (max 3000mg) over 10 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "AVOID in pregnancy; check ammonia, LFTs"
+          }
+        ],
+        "Alternative Options": [
+          {
+            "item": "Lacosamide 400mg IV over 15 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Check ECG for PR prolongation"
+          },
+          {
+            "item": "Brivaracetam 100-200mg IV over 2-5 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Faster onset than LEV; useful if already on LEV"
+          },
+          {
+            "item": "Phenobarbital 15-20mg/kg IV at 50-100mg/min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Highly effective; often requires intubation"
+          }
+        ]
+      },
+      "Refractory SE: Anesthetics (20-60 min)": {
+        "Primary Options": [
+          {
+            "item": "Midazolam: Load 0.2mg/kg IV \u2192 Infusion 0.1mg/kg/hr, titrate to burst suppression (max 2mg/kg/hr)",
+            "ED": "URGENT",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Most familiar to non-specialists; reversible"
+          },
+          {
+            "item": "Propofol: Load 1-2mg/kg IV \u2192 Infusion 20-200mcg/kg/min",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Limit <48h at high dose (PRIS risk); check triglycerides"
+          },
+          {
+            "item": "Ketamine: Load 1-2mg/kg IV \u2192 Infusion 1-5mg/kg/hr",
+            "ED": "URGENT",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "NMDA antagonism; less hypotension; consider EARLY"
+          },
+          {
+            "item": "Pentobarbital: Load 5-15mg/kg at 50mg/min \u2192 Infusion 0.5-5mg/kg/hr",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Most potent; significant hypotension - need pressors"
+          }
+        ],
+        "Requirements": [
+          {
+            "item": "Intubation (RSI with propofol or ketamine)",
+            "ED": "STAT",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Required for anesthetic infusions"
+          },
+          {
+            "item": "Continuous EEG monitoring",
+            "ED": "STAT",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Target burst suppression; mandatory"
+          },
+          {
+            "item": "Arterial line placement",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Continuous BP monitoring"
+          },
+          {
+            "item": "Central venous access",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Pressors, multiple infusions"
+          }
+        ]
+      },
+      "NORSE/FIRES Immunotherapy": {
+        "First-Line (Start within 72h)": [
+          {
+            "item": "Methylprednisolone 1000mg IV daily \u00d7 3-5 days",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Glucose q6h, BP, GI prophylaxis"
+          },
+          {
+            "item": "IVIG 0.4g/kg/day IV \u00d7 5 days (total 2g/kg)",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Can start simultaneously with steroids"
+          },
+          {
+            "item": "Plasmapheresis (PLEX) 5-7 exchanges over 10-14 days",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hemodynamics, Ca, Mg, fibrinogen monitoring"
+          }
+        ],
+        "Second-Line (If first-line fails by Day 7)": [
+          {
+            "item": "Rituximab 375mg/m\u00b2 IV weekly \u00d7 4 doses",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "Screen HepB first; infection risk"
+          },
+          {
+            "item": "Cyclophosphamide 750-1000mg/m\u00b2 IV monthly \u00d7 3-6 months",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "CBC weekly, hydration + mesna"
+          },
+          {
+            "item": "Tocilizumab 8mg/kg IV q4 weeks",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "EXT",
+            "rationale": "Emerging option; LFTs, lipids"
+          },
+          {
+            "item": "Anakinra 100mg SC daily",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "EXT",
+            "rationale": "Used in FIRES; injection site reactions"
+          }
+        ]
+      },
+      "Referrals": {
+        "Consults": [
+          {
+            "item": "Neurology/Epilepsy STAT consult",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "All cases of SE"
+          },
+          {
+            "item": "Neurocritical care consult",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "RSE/SRSE, need for anesthetic infusions"
+          },
+          {
+            "item": "ICU admission",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "-",
+            "rationale": "All SE requiring second-line agents"
+          },
+          {
+            "item": "EEG/cEEG initiation",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Mandatory for RSE/SRSE"
+          },
+          {
+            "item": "Infectious disease consult",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Suspected CNS infection"
+          },
+          {
+            "item": "Neuroimmunology consult",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "NORSE/FIRES, autoimmune encephalitis"
+          },
+          {
+            "item": "Nutrition/Dietitian (ketogenic diet)",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Initiate by Day 7 in NORSE"
+          },
+          {
+            "item": "Palliative care consult",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "ROUTINE",
+            "rationale": "SRSE with poor prognosis"
+          }
+        ]
+      }
+    }
+  },
+  "New Onset Seizure": {
+    "version": "1.1",
+    "icd10": "R56.9, G40.909",
+    "scope": "Initial evaluation and management of first-time unprovoked seizure. Covers immediate stabilization, diagnostic workup, acute treatment, and ASM initiation framework. Excludes status epilepticus, pediatric seizures, and known epilepsy.",
+    "definitions": {
+      "Seizure": "A transient occurrence of signs and/or symptoms due to abnormal excessive or synchronous neuronal activity in the brain",
+      "Epilepsy": "Disease of the brain defined by: (1) \u22652 unprovoked seizures >24h apart, OR (2) 1 unprovoked seizure with recurrence risk \u226560%, OR (3) diagnosis of epilepsy syndrome",
+      "Unprovoked Seizure": "Seizure occurring in the absence of a temporary provoking factor (e.g., acute metabolic derangement, infection, drug intoxication/withdrawal)",
+      "Provoked/Acute Symptomatic Seizure": "Seizure occurring in close temporal relationship to an acute CNS insult (infection, stroke, trauma) or systemic insult (metabolic, toxic)",
+      "Post-ictal State": "Period of altered consciousness, confusion, fatigue, headache, or focal deficits following a seizure; typically 5-30 minutes but can last hours",
+      "Todd's Paralysis": "Transient focal weakness lasting minutes to hours following a focal seizure; implies focal onset"
+    },
+    "quickReference": {
+      "title": "First Seizure Evaluation Quick Guide",
+      "description": "Key steps for evaluating a patient with first unprovoked seizure",
+      "steps": [
+        {
+          "name": "Immediate (ED)",
+          "items": [
+            "Check glucose - treat if <70 mg/dL",
+            "Basic labs: CBC, CMP, Mg, Ca, UDS, alcohol",
+            "CT head without contrast - rule out hemorrhage/mass",
+            "Pregnancy test if applicable"
+          ]
+        },
+        {
+          "name": "Within 24-48 hours",
+          "items": [
+            "EEG - highest yield within 24h of event",
+            "MRI brain with epilepsy protocol",
+            "Neurology consultation"
+          ]
+        },
+        {
+          "name": "Decision: To treat or not?",
+          "items": [
+            "Single unprovoked seizure: ~40-50% recurrence risk",
+            "Consider treatment if: abnormal EEG, structural lesion, focal onset, nocturnal seizure, strong patient preference",
+            "First-line ASMs: Levetiracetam, Lamotrigine, Lacosamide"
+          ]
+        },
+        {
+          "name": "Patient counseling",
+          "items": [
+            "NO DRIVING until cleared (state-specific laws)",
+            "Avoid heights, swimming alone, operating machinery",
+            "Sleep hygiene, avoid alcohol/drugs",
+            "Return if seizure >5 min or repeated seizures"
+          ]
+        }
+      ]
+    },
+    "appendices": [
+      {
+        "title": "ASM Selection Guide",
+        "content": "FIRST-LINE OPTIONS:\n\u2022 Levetiracetam: Broad spectrum, rapid titration, no drug interactions\n  - Watch for behavioral changes (\"Keppra rage\")\n  - Adjust for renal function\n\n\u2022 Lamotrigine: Preferred for women of childbearing potential\n  - SLOW titration required (SJS/TEN risk)\n  - Takes weeks to reach therapeutic dose\n\n\u2022 Lacosamide: Well tolerated, minimal interactions\n  - Check ECG (PR prolongation)\n  - Avoid in cardiac conduction disease\n\nSPECIAL POPULATIONS:\n\u2022 Pregnancy: Levetiracetam, Lamotrigine (avoid valproate)\n\u2022 Elderly: Lower doses, watch for interactions\n\u2022 Renal impairment: Reduce LEV dose\n\u2022 Hepatic impairment: Avoid/reduce valproate, reduce lacosamide"
+      },
+      {
+        "title": "When to Start ASM After First Seizure",
+        "content": "HIGHER RECURRENCE RISK (consider starting ASM):\n\u2022 Abnormal EEG (epileptiform discharges)\n\u2022 Structural brain lesion on MRI\n\u2022 Focal onset seizure\n\u2022 Nocturnal seizure\n\u2022 Prior brain injury or CNS infection\n\u2022 Family history of epilepsy\n\u2022 Strong patient preference (anxiety about recurrence)\n\nLOWER RECURRENCE RISK (may defer treatment):\n\u2022 Normal EEG and MRI\n\u2022 Clear provoked/acute symptomatic seizure\n\u2022 Single brief generalized seizure\n\u2022 Patient preference to wait\n\nKEY EVIDENCE:\n\u2022 Overall recurrence after first unprovoked seizure: ~40-50%\n\u2022 Treatment reduces short-term recurrence but NOT long-term remission\n\u2022 Number needed to treat to prevent 1 recurrence: ~5"
+      }
+    ],
+    "clinicalNotes": [
+      "EEG yield is highest within 24-48 hours of seizure; request urgent if possible",
+      "CT head is useful for acute exclusion but NOT sufficient to identify seizure etiology - MRI is gold standard",
+      "Prolactin level (if drawn within 10-20 min) can help distinguish seizure from non-epileptic event",
+      "Consider LP if any concern for infection (fever, immunocompromised, meningismus) or autoimmune etiology",
+      "Driving restrictions are state-specific but typically require seizure-free interval (3-12 months)",
+      "Women of childbearing potential: Discuss contraception (some ASMs reduce efficacy) and folic acid supplementation",
+      "~40-50% of patients with first unprovoked seizure will have recurrence; treat based on risk factors and patient preference"
+    ],
+    "sections": {
+      "Laboratory Workup": {
+        "Core Labs": [
+          {
+            "item": "Point-of-care glucose",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Hypoglycemia is immediately reversible cause"
+          },
+          {
+            "item": "CBC with differential",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Infection screen, baseline before ASMs"
+          },
+          {
+            "item": "CMP (BMP + LFTs)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Electrolyte abnormalities, renal/hepatic function for ASM dosing"
+          },
+          {
+            "item": "Magnesium",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Hypomagnesemia lowers seizure threshold"
+          },
+          {
+            "item": "Calcium (ionized if available)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Hypocalcemia can cause seizures"
+          },
+          {
+            "item": "Phosphorus",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Hypophosphatemia (especially alcohol withdrawal)"
+          },
+          {
+            "item": "Urine drug screen",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Illicit drugs and withdrawal states"
+          },
+          {
+            "item": "Blood alcohol level",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alcohol intoxication or withdrawal"
+          },
+          {
+            "item": "Urinalysis",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "UTI can provoke seizures (especially elderly)"
+          },
+          {
+            "item": "Prolactin level (draw within 10-20 min)",
+            "ED": "STAT",
+            "HOSP": "-",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Helps distinguish seizure from non-epileptic event"
+          }
+        ],
+        "Extended Labs": [
+          {
+            "item": "TSH",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "Thyroid dysfunction affects seizure threshold"
+          },
+          {
+            "item": "Ammonia",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Hepatic encephalopathy, urea cycle disorders"
+          },
+          {
+            "item": "Troponin",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Cardiac ischemia as cause or consequence"
+          },
+          {
+            "item": "ECG",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "Arrhythmia, prolonged QTc, Brugada"
+          },
+          {
+            "item": "Lactate",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Elevated post-ictal; metabolic acidosis"
+          },
+          {
+            "item": "Pregnancy test (\u03b2-hCG)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "ROUTINE",
+            "ICU": "STAT",
+            "rationale": "Eclampsia; affects imaging and ASM choice"
+          },
+          {
+            "item": "B12 level",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Deficiency associated with seizures"
+          },
+          {
+            "item": "Folate level",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Deficiency can lower threshold"
+          }
+        ],
+        "Specialized Labs": [
+          {
+            "item": "Autoimmune encephalitis panel (serum)",
+            "ED": "-",
+            "HOSP": "EXT",
+            "OPD": "EXT",
+            "ICU": "-",
+            "rationale": "Anti-NMDAR, LGI1, CASPR2 if clinical suspicion"
+          },
+          {
+            "item": "Paraneoplastic panel (serum)",
+            "ED": "-",
+            "HOSP": "EXT",
+            "OPD": "EXT",
+            "ICU": "-",
+            "rationale": "Subacute onset, smoking, weight loss"
+          },
+          {
+            "item": "HIV",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "HIV-associated CNS disease"
+          },
+          {
+            "item": "RPR/VDRL",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Neurosyphilis"
+          }
+        ]
+      },
+      "Imaging & Studies": {
+        "Essential Imaging": [
+          {
+            "item": "CT head without contrast",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Acute exclusion of hemorrhage, mass, hydrocephalus"
+          },
+          {
+            "item": "MRI brain with/without contrast (epilepsy protocol)",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "Gold standard for seizure etiology"
+          },
+          {
+            "item": "EEG (routine)",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "Within 24-48h of seizure for best yield"
+          }
+        ],
+        "Extended Studies": [
+          {
+            "item": "Continuous EEG (cEEG) monitoring",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "If altered mental status persists"
+          },
+          {
+            "item": "Prolonged ambulatory EEG (24-72h)",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "If routine EEG non-diagnostic"
+          },
+          {
+            "item": "Video-EEG monitoring",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "If diagnosis uncertain (vs PNES)"
+          },
+          {
+            "item": "MRA/MRV brain",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "If vascular etiology suspected"
+          },
+          {
+            "item": "Echocardiogram",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "If embolic stroke suspected as cause"
+          },
+          {
+            "item": "Chest X-ray",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Aspiration risk post-ictal"
+          }
+        ],
+        "Lumbar Puncture (if indicated)": [
+          {
+            "item": "Opening pressure",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Elevated ICP"
+          },
+          {
+            "item": "Cell count (tubes 1 and 4)",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Infection, inflammation"
+          },
+          {
+            "item": "Protein",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Elevated in infection, inflammation"
+          },
+          {
+            "item": "Glucose with serum glucose",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Low in bacterial/fungal meningitis"
+          },
+          {
+            "item": "Gram stain and culture",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Bacterial meningitis"
+          },
+          {
+            "item": "HSV-1/2 PCR",
+            "ED": "URGENT",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "HSV encephalitis"
+          }
+        ]
+      },
+      "Acute Treatment": {
+        "If Actively Seizing": [
+          {
+            "item": "Lorazepam 0.1 mg/kg IV (max 4 mg); may repeat once in 5 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "First-line benzodiazepine"
+          },
+          {
+            "item": "Midazolam 10 mg IM if no IV access",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative if no IV"
+          },
+          {
+            "item": "Dextrose 50% 25-50 mL IV if hypoglycemia",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Reversible cause"
+          },
+          {
+            "item": "Thiamine 100-500 mg IV BEFORE glucose if alcohol suspected",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Prevent Wernicke"
+          },
+          {
+            "item": "Supplemental oxygen 2-4 L NC or non-rebreather PRN",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Maintain O2 sat >94%"
+          }
+        ],
+        "ASM Loading": [
+          {
+            "item": "Levetiracetam 40-60 mg/kg IV (max 4500 mg) over 15 min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "First-line acute loading"
+          },
+          {
+            "item": "Levetiracetam 1500-3000 mg PO if stable",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "URGENT",
+            "ICU": "-",
+            "rationale": "Oral loading option"
+          },
+          {
+            "item": "Fosphenytoin 20 mg PE/kg IV at 150 mg PE/min",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Alternative; cardiac monitoring required"
+          },
+          {
+            "item": "Valproate 40 mg/kg IV over 10 min (max 3000 mg)",
+            "ED": "STAT",
+            "HOSP": "STAT",
+            "OPD": "-",
+            "ICU": "STAT",
+            "rationale": "Broad-spectrum; avoid in pregnancy"
+          },
+          {
+            "item": "Lacosamide 200-400 mg IV over 15-30 min",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "-",
+            "ICU": "URGENT",
+            "rationale": "Alternative; check ECG for PR prolongation"
+          }
+        ]
+      },
+      "Maintenance ASMs": {
+        "First-Line Options": [
+          {
+            "item": "Levetiracetam 500 mg BID \u2192 titrate to 1500 mg BID (max 3000 mg/day)",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "ROUTINE",
+            "rationale": "Monitor for behavioral changes ('Keppra rage')"
+          },
+          {
+            "item": "Lamotrigine 25 mg daily \u00d7 2 wks \u2192 titrate slowly to 200-400 mg/day",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Preferred in women; slow titration for SJS risk"
+          },
+          {
+            "item": "Lacosamide 100 mg BID \u2192 titrate to 200-400 mg BID",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "ROUTINE",
+            "rationale": "Check ECG at baseline and dose changes"
+          }
+        ],
+        "Alternative Options": [
+          {
+            "item": "Oxcarbazepine 300 mg BID \u2192 titrate to 1200-2400 mg/day",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Focal seizures; monitor sodium"
+          },
+          {
+            "item": "Valproate 10-15 mg/kg/day \u2192 titrate to max 60 mg/kg/day",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "ROUTINE",
+            "rationale": "Generalized seizures; teratogenic"
+          },
+          {
+            "item": "Brivaracetam 50 mg BID \u2192 may increase to 100 mg BID",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "ROUTINE",
+            "rationale": "Less behavioral effects than LEV"
+          },
+          {
+            "item": "Zonisamide 100 mg daily \u2192 titrate to 300-400 mg daily",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Kidney stone risk; cognitive effects"
+          },
+          {
+            "item": "Topiramate 25 mg BID \u2192 titrate to 200-400 mg/day",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Cognitive effects ('dopamax'); weight loss"
+          }
+        ]
+      },
+      "Referrals": {
+        "Consults": [
+          {
+            "item": "Neurology consult",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "All new onset seizures"
+          },
+          {
+            "item": "Epilepsy specialist referral",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Diagnostic uncertainty, refractory, surgical candidacy"
+          },
+          {
+            "item": "EEG/Neurodiagnostics",
+            "ED": "URGENT",
+            "HOSP": "URGENT",
+            "OPD": "ROUTINE",
+            "ICU": "URGENT",
+            "rationale": "EEG scheduling; continuous EEG if indicated"
+          },
+          {
+            "item": "Neurosurgery consult",
+            "ED": "-",
+            "HOSP": "URGENT",
+            "OPD": "EXT",
+            "ICU": "URGENT",
+            "rationale": "Structural lesion (tumor, AVM, SDH)"
+          },
+          {
+            "item": "Psychiatry consult",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Depression, anxiety, PNES evaluation"
+          },
+          {
+            "item": "Social work consult",
+            "ED": "-",
+            "HOSP": "ROUTINE",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Driving restrictions, employment, insurance"
+          },
+          {
+            "item": "Women's health/OB-GYN referral",
+            "ED": "-",
+            "HOSP": "-",
+            "OPD": "ROUTINE",
+            "ICU": "-",
+            "rationale": "Contraception counseling, pregnancy planning"
+          }
+        ]
+      },
+      "Patient Instructions": {
+        "Safety & Return Precautions": [
+          {
+            "item": "Return to ED if: recurrent seizure, seizure >5 min, head injury, persistent confusion",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Return precautions"
+          },
+          {
+            "item": "Do NOT drive until cleared by neurology (per state guidelines)",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Legal requirement"
+          },
+          {
+            "item": "Avoid operating heavy machinery, heights, swimming alone",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Safety"
+          },
+          {
+            "item": "Showers preferred; keep bathroom door unlocked",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Drowning prevention"
+          },
+          {
+            "item": "Take ASM exactly as prescribed; do NOT stop abruptly",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Prevent breakthrough seizures"
+          },
+          {
+            "item": "Avoid triggers: sleep deprivation, alcohol, drugs, missed meds",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Seizure prevention"
+          },
+          {
+            "item": "Keep seizure diary",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Track pattern"
+          },
+          {
+            "item": "Wear medical ID bracelet",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Emergency identification"
+          },
+          {
+            "item": "Educate family on seizure first aid",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Family education"
+          }
+        ]
+      },
+      "Lifestyle & Prevention": {
+        "Recommendations": [
+          {
+            "item": "Sleep hygiene: aim for 7-9 hours nightly",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Sleep deprivation lowers threshold"
+          },
+          {
+            "item": "Avoid alcohol (lowers seizure threshold; interacts with ASMs)",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Avoid triggers"
+          },
+          {
+            "item": "Avoid illicit drugs (especially stimulants)",
+            "ED": "\u2713",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Avoid triggers"
+          },
+          {
+            "item": "Medication adherence: use pill organizers, phone alarms",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Prevent missed doses"
+          },
+          {
+            "item": "Folic acid 1-4 mg daily for women of childbearing potential",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Especially on enzyme-inducing ASMs"
+          },
+          {
+            "item": "Home safety: pad furniture corners, avoid glass shower doors",
+            "ED": "-",
+            "HOSP": "\u2713",
+            "OPD": "\u2713",
+            "ICU": "-",
+            "rationale": "Injury prevention"
+          }
+        ]
+      }
+    }
+  }
+};
+
+// Priority configuration
+const priorityConfig = {
+  'STAT': { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', label: 'STAT (Immediate)' },
+  'URGENT': { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200', label: 'URGENT (Hours)' },
+  'ROUTINE': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', label: 'ROUTINE (Standard)' },
+  'EXT': { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', label: 'EXT (Extended)' },
+  '✓': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', label: 'Applies' },
+  '-': { bg: 'bg-gray-100', text: 'text-gray-400', border: 'border-gray-200', label: 'N/A' }
+};
+
+const venues = ['ED', 'HOSP', 'OPD', 'ICU'];
+
+// Collapsible Section Component
+function CollapsibleSection({ title, children, defaultOpen = false, variant = 'default' }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const variants = {
+    default: 'bg-white border-gray-200',
+    info: 'bg-blue-50 border-blue-200',
+    warning: 'bg-amber-50 border-amber-200',
+    success: 'bg-green-50 border-green-200'
+  };
+  
+  return (
+    <div className={`border rounded-lg mb-3 overflow-hidden ${variants[variant]}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="font-medium text-gray-800">{title}</span>
+        <span className="text-gray-400 text-lg">{isOpen ? '−' : '+'}</span>
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 border-t border-gray-100">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Quick Reference Card Component
+function QuickReferenceCard({ quickRef }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (!quickRef) return null;
+  
+  return (
+    <div className="bg-amber-50 border-2 border-amber-300 rounded-xl mb-6 overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left bg-amber-100 hover:bg-amber-200 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xl">⚡</span>
+          <span className="font-bold text-amber-900">{quickRef.title}</span>
+        </div>
+        <span className="text-amber-700 text-sm">{isOpen ? 'Hide' : 'Show Quick Guide'}</span>
+      </button>
+      {isOpen && (
+        <div className="p-4">
+          <p className="text-sm text-amber-800 mb-4">{quickRef.description}</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {quickRef.steps.map((step, idx) => (
+              <div key={idx} className="bg-white rounded-lg p-3 border border-amber-200">
+                <h4 className="font-semibold text-gray-800 mb-2 text-sm">{step.name}</h4>
+                <ul className="space-y-1">
+                  {step.items.map((item, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                      <span className="text-amber-500 mt-0.5">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Definitions Component
+function DefinitionsPanel({ definitions }) {
+  if (!definitions || Object.keys(definitions).length === 0) return null;
+  
+  return (
+    <CollapsibleSection title="📖 Definitions" variant="info">
+      <div className="grid gap-2 mt-3">
+        {Object.entries(definitions).map(([term, definition]) => (
+          <div key={term} className="bg-white rounded-lg p-3 border border-blue-100">
+            <dt className="font-semibold text-blue-900 text-sm">{term}</dt>
+            <dd className="text-gray-600 text-sm mt-1">{definition}</dd>
+          </div>
+        ))}
+      </div>
+    </CollapsibleSection>
+  );
+}
+
+// Clinical Notes Component
+function ClinicalNotesPanel({ notes }) {
+  if (!notes || notes.length === 0) return null;
+  
+  return (
+    <CollapsibleSection title="📝 Clinical Notes" variant="warning">
+      <ul className="space-y-2 mt-3">
+        {notes.map((note, idx) => (
+          <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+            <span className="text-amber-500 mt-0.5">⚠</span>
+            <span>{note}</span>
+          </li>
+        ))}
+      </ul>
+    </CollapsibleSection>
+  );
+}
+
+// Appendices Component
+function AppendicesPanel({ appendices }) {
+  if (!appendices || appendices.length === 0) return null;
+  
+  return (
+    <CollapsibleSection title="📋 Appendices & Protocols" variant="success">
+      <div className="space-y-3 mt-3">
+        {appendices.map((appendix, idx) => (
+          <CollapsibleSection key={idx} title={appendix.title} defaultOpen={false}>
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-gray-50 p-3 rounded mt-2 overflow-x-auto">
+              {appendix.content}
+            </pre>
+          </CollapsibleSection>
+        ))}
+      </div>
+    </CollapsibleSection>
+  );
+}
+
+function NeuroPlanBuilder() {
+  const diagnoses = Object.keys(diagnosesData);
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState(diagnoses[0]);
+  const [selectedVenue, setSelectedVenue] = useState('ED');
+  const [checkedItems, setCheckedItems] = useState({});
+  const [customNotes, setCustomNotes] = useState({});
+  const [editedItems, setEditedItems] = useState({});
+  const [expandedSections, setExpandedSections] = useState({});
+  const [showPreview, setShowPreview] = useState(true);
+  const [showReference, setShowReference] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const currentData = diagnosesData[selectedDiagnosis] || {};
+
+  const getItemKey = (section, subsection, item) => `${selectedDiagnosis}|${section}|${subsection}|${item}`;
+
+  const handleCheck = (section, subsection, item) => {
+    const key = getItemKey(section, subsection, item.item);
+    setCheckedItems(prev => ({
+      ...prev,
+      [key]: prev[key] ? undefined : { ...item, section, subsection }
+    }));
+  };
+
+  const handleNoteChange = (section, note) => {
+    setCustomNotes(prev => ({ ...prev, [`${selectedDiagnosis}|${section}`]: note }));
+  };
+
+  const handleEditItem = (key, value) => {
+    setEditedItems(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({ ...prev, [section]: prev[section] === false ? true : false }));
+  };
+
+  const getFilteredItems = (items) => {
+    return items.filter(item => item[selectedVenue] && item[selectedVenue] !== '-');
+  };
+
+  const getSectionItemCount = (sectionName, subsections) => {
+    let total = 0, checked = 0;
+    Object.entries(subsections).forEach(([subsectionName, items]) => {
+      const filtered = getFilteredItems(items);
+      total += filtered.length;
+      filtered.forEach(item => {
+        if (checkedItems[getItemKey(sectionName, subsectionName, item.item)]) checked++;
+      });
+    });
+    return { total, checked };
+  };
+
+  const selectAllInSection = (sectionName, subsections) => {
+    const newChecked = { ...checkedItems };
+    Object.entries(subsections).forEach(([subsectionName, items]) => {
+      getFilteredItems(items).forEach(item => {
+        const key = getItemKey(sectionName, subsectionName, item.item);
+        newChecked[key] = { ...item, section: sectionName, subsection: subsectionName };
+      });
+    });
+    setCheckedItems(newChecked);
+  };
+
+  const clearSelections = () => {
+    setCheckedItems({});
+    setCustomNotes({});
+    setEditedItems({});
+  };
+
+  const selectedItemsList = useMemo(() => {
+    const bySection = {};
+    Object.entries(checkedItems).forEach(([key, data]) => {
+      if (!data || !key.startsWith(selectedDiagnosis + '|')) return;
+      const section = data.section;
+      if (!bySection[section]) bySection[section] = [];
+      bySection[section].push({
+        key,
+        item: data.item,
+        priority: data[selectedVenue],
+        rationale: data.rationale
+      });
+    });
+    
+    return Object.entries(bySection).map(([section, items]) => ({
+      section,
+      items,
+      note: customNotes[`${selectedDiagnosis}|${section}`]
+    }));
+  }, [checkedItems, selectedDiagnosis, selectedVenue, customNotes]);
+
+  const selectedCount = selectedItemsList.reduce((acc, s) => acc + s.items.length, 0);
+
+  const copyToClipboard = () => {
+    let text = `${selectedDiagnosis} - ${selectedVenue} Plan\n`;
+    text += `ICD-10: ${currentData.icd10}\n`;
+    text += `Generated: ${new Date().toLocaleString()}\n\n`;
+    
+    selectedItemsList.forEach(({ section, items, note }) => {
+      text += `## ${section}\n`;
+      items.forEach(({ item, priority }) => {
+        const editedText = editedItems[getItemKey(section, '', item)] || item;
+        text += `- [${priority}] ${editedText}\n`;
+      });
+      if (note) text += `Note: ${note}\n`;
+      text += '\n';
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-900">Neuro Plan Builder</h1>
+              <select
+                value={selectedDiagnosis}
+                onChange={(e) => { setSelectedDiagnosis(e.target.value); clearSelections(); }}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {diagnoses.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Venue:</span>
+              {venues.map(v => (
+                <button
+                  key={v}
+                  onClick={() => setSelectedVenue(v)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                    selectedVenue === v
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-gray-100">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs text-gray-500 font-medium">Priority:</span>
+              {Object.entries(priorityConfig).filter(([k]) => k !== '-' && k !== '✓').map(([key, config]) => (
+                <span key={key} className={`px-2 py-0.5 text-xs font-medium rounded ${config.bg} ${config.text}`}>
+                  {config.label}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => setShowReference(!showReference)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  showReference ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                }`}
+              >
+                📚 {showReference ? 'Hide' : 'Show'} Reference
+              </button>
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                {showPreview ? 'Hide Preview' : 'Show Preview'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Reference Panel */}
+        {showReference && (
+          <div className="mb-6 p-4 bg-gray-100 rounded-xl">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span>📚</span> Reference Materials - {selectedDiagnosis}
+            </h3>
+            
+            {/* Quick Reference */}
+            <QuickReferenceCard quickRef={currentData.quickReference} />
+            
+            {/* Definitions */}
+            <DefinitionsPanel definitions={currentData.definitions} />
+            
+            {/* Clinical Notes */}
+            <ClinicalNotesPanel notes={currentData.clinicalNotes} />
+            
+            {/* Appendices */}
+            <AppendicesPanel appendices={currentData.appendices} />
+          </div>
+        )}
+
+        <div className={`grid gap-6 ${showPreview ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+          {/* Main Content */}
+          <div className={showPreview ? 'lg:col-span-2' : ''}>
+            <div className="text-sm text-gray-500 mb-4">
+              <span className="font-medium">{currentData.icd10}</span>
+              {currentData.scope && <span className="ml-2">• {currentData.scope}</span>}
+            </div>
+
+            {currentData?.sections && Object.entries(currentData.sections).map(([sectionName, subsections]) => {
+              const { total, checked } = getSectionItemCount(sectionName, subsections);
+              const isExpanded = expandedSections[sectionName] !== false;
+              
+              if (total === 0) return null;
+
+              return (
+                <div key={sectionName} className="mb-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div 
+                    className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100"
+                    onClick={() => toggleSection(sectionName)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                      <h2 className="font-semibold text-gray-900">{sectionName}</h2>
+                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
+                        {checked}/{total}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); selectAllInSection(sectionName, subsections); }}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Select All
+                    </button>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="p-4">
+                      {Object.entries(subsections).map(([subsectionName, items]) => {
+                        const filteredItems = getFilteredItems(items);
+                        if (filteredItems.length === 0) return null;
+                        
+                        return (
+                          <div key={subsectionName} className="mb-4 last:mb-0">
+                            <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                              {subsectionName}
+                              <span className="text-xs text-gray-400">({filteredItems.length})</span>
+                            </h3>
+                            <div className="space-y-1">
+                              {filteredItems.map((item, idx) => {
+                                const key = getItemKey(sectionName, subsectionName, item.item);
+                                const isChecked = checkedItems[key];
+                                const config = priorityConfig[item[selectedVenue]] || priorityConfig['-'];
+                                
+                                return (
+                                  <label
+                                    key={idx}
+                                    className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                      isChecked ? `${config.bg} ${config.border} border` : 'hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked || false}
+                                      onChange={() => handleCheck(sectionName, subsectionName, item)}
+                                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start gap-2">
+                                        <span className={`inline-flex px-1.5 py-0.5 text-xs font-medium rounded ${config.bg} ${config.text}`}>
+                                          {item[selectedVenue]}
+                                        </span>
+                                        <span className={`text-sm ${isChecked ? 'font-medium' : ''}`}>
+                                          {item.item}
+                                        </span>
+                                      </div>
+                                      {item.rationale && (
+                                        <p className="text-xs text-gray-500 mt-1 ml-8">{item.rationale}</p>
+                                      )}
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Custom note for {sectionName}
+                        </label>
+                        <textarea
+                          value={customNotes[`${selectedDiagnosis}|${sectionName}`] || ''}
+                          onChange={(e) => handleNoteChange(sectionName, e.target.value)}
+                          placeholder="Add custom notes..."
+                          rows={2}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sidebar */}
+          {showPreview && (
+            <div className="lg:col-span-1">
+              <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-800 px-4 py-3">
+                  <h2 className="font-semibold text-white">Selected Plan ({selectedCount} items)</h2>
+                </div>
+                
+                <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {selectedItemsList.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">
+                      Check items from the left panel to build your plan
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {selectedItemsList.map(({ section, items, note }) => (
+                        <div key={section}>
+                          <h3 className="text-sm font-semibold text-gray-700 mb-2">{section}</h3>
+                          <div className="space-y-2">
+                            {items.map(({ key, item, priority }) => {
+                              const config = priorityConfig[priority] || priorityConfig['-'];
+                              return (
+                                <div key={key} className="flex items-start gap-2">
+                                  <span className={`flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded ${config.bg} ${config.text}`}>
+                                    {priority}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={editedItems[key] || item}
+                                    onChange={(e) => handleEditItem(key, e.target.value)}
+                                    className="flex-1 text-sm px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                  />
+                                </div>
+                              );
+                            })}
+                            {note && (
+                              <div className="mt-2 p-2 bg-yellow-50 rounded text-sm text-yellow-800">
+                                <span className="font-medium">Note:</span> {note}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedCount > 0 && (
+                  <div className="border-t border-gray-200 p-4 space-y-2">
+                    <button
+                      onClick={copyToClipboard}
+                      className={`w-full py-2 text-sm font-medium rounded-lg transition-colors ${
+                        copySuccess
+                          ? 'bg-green-600 text-white'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {copySuccess ? '✓ Copied to Clipboard!' : 'Copy Plan to Clipboard'}
+                    </button>
+                    <button
+                      onClick={clearSelections}
+                      className="w-full py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 py-6 border-t border-gray-200">
+        <p className="text-xs text-gray-400 text-center">
+          Neuro Clinical Decision Support v1.2 | Status Epilepticus validated 100% | 
+          For educational purposes only - verify all clinical decisions
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<NeuroPlanBuilder />);
+    </script>
+</body>
+</html>
